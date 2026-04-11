@@ -1,0 +1,28 @@
+{
+  "name": "trevixa-encode-chat",
+  "displayName": "Trevixa Encode Chat",
+  "description": "Trevixa Encode chat panel for VS Code",
+  "version": "0.1.0",
+  "publisher": "trevixa",
+  "engines": { "vscode": "^1.95.0" },
+  "categories": ["Other"],
+  "activationEvents": ["onCommand:trevixa.openChat"],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      { "command": "trevixa.openChat", "title": "Trevixa: Open Chat" },
+      { "command": "trevixa.createFile", "title": "Trevixa: Create File" },
+      { "command": "trevixa.deleteFile", "title": "Trevixa: Delete File" },
+      { "command": "trevixa.applyPatch", "title": "Trevixa: Apply Patch" }
+    ]
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "@types/vscode": "^1.95.0",
+    "typescript": "^5.6.3"
+  }
+}

@@ -561,5 +561,6 @@
     "Session-aware chat history",
     "Package-safe import fallback",
     "Automated unit test suite"
+    "Dataset multi-epoch training command"
   ]
 }

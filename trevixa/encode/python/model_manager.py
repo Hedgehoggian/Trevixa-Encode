@@ -23,6 +23,9 @@ class LocalModelRuntime:
         self._models: list[LocalModelSpec] = [LocalModelSpec(name="Trevixa Encode Alpha", version="0.2.0")]
         self._rr = itertools.cycle(range(len(self._models)))
         self._lock = threading.RLock()
+        self._models: list[LocalModelSpec] = []
+        self._rr = itertools.cycle([0])
+        self._lock = threading.Lock()
 
     def configure(self, models: list[LocalModelSpec]) -> None:
         if len(models) > self.MAX_MODELS:
@@ -39,12 +42,17 @@ class LocalModelRuntime:
 
     def infer(self, prompt: str) -> str:
         with self._lock:
+            if not self._models:
+                self.configure([])
             idx = next(self._rr)
             model = self._models[idx]
         return self._infer_fn(prompt, model)
 
     def infer_parallel(self, prompt: str) -> list[str]:
         models = self.list_models()
+        if not models:
+            self.configure([])
+            models = self.list_models()
 
         output_queue: queue.Queue[str] = queue.Queue()
         threads: list[threading.Thread] = []
@@ -59,6 +67,7 @@ class LocalModelRuntime:
 
         for t in threads:
             t.join(timeout=30)
+            t.join(timeout=20)
 
         outputs = []
         while not output_queue.empty():

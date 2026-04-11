@@ -10,6 +10,7 @@ try:
     from .api_entrypoint import TrevixaApi
 except ImportError:
     from api_entrypoint import TrevixaApi
+from api_entrypoint import TrevixaApi
 
 API = TrevixaApi()
 

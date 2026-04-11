@@ -24,6 +24,14 @@ except ImportError:
     from neural_net import LightweightNeuralNet
     from safety import check_prompt, safe_refusal
     from session_store import SessionStore
+from connectors import anthropic_provider, github_copilot_provider, openai_provider
+from feature_engine import FeatureEngine
+from intellect import IntellectEngine
+from memory_store import JsonlMemoryStore
+from model_manager import LocalModelRuntime, LocalModelSpec
+from modes import text_chat, video_chat, voice_chat
+from neural_net import LightweightNeuralNet
+from safety import check_prompt, safe_refusal
 
 
 @dataclass
@@ -69,6 +77,9 @@ class TrevixaApi:
             f"Context: {context}\nPlan: {plan}"
         )
         return self.features.apply(response)
+        # lightweight local intelligence path
+        nn_scores = self.nn.forward([float((ord(c) % 32) / 31.0) for c in prompt[:16].ljust(16)])
+        return text_chat.respond(f"[{spec.name} v{spec.version} score={sum(nn_scores):.2f}] {prompt}")
 
     def _route_provider(self, prompt: str) -> str:
         if prompt.startswith("@openai") or self.runtime.model.startswith("@openai"):
@@ -84,6 +95,17 @@ class TrevixaApi:
         return self.features.apply(self.local_runtime.infer(prompt))
 
     def chat_text(self, prompt: str, session_id: str = "default") -> str:
+            return openai_provider.respond(prompt, model=model)
+        if prompt.startswith("@claude") or self.runtime.model.startswith("@claude"):
+            model = self.runtime.model.replace("@claude", "").strip() or "claude-3-5-sonnet-latest"
+            return anthropic_provider.respond(prompt, model=model)
+        if prompt.startswith("@copilot") or self.runtime.model.startswith("@copilot"):
+            return github_copilot_provider.respond(prompt)
+        if prompt.startswith("@local-all"):
+            return "\n".join(self.local_runtime.infer_parallel(prompt))
+        return self.local_runtime.infer(prompt)
+
+    def chat_text(self, prompt: str) -> str:
         safety = check_prompt(prompt)
         if not safety.allowed:
             return safe_refusal(safety.reason)
@@ -100,6 +122,7 @@ class TrevixaApi:
         response = self._route_provider(prompt)
         self.sessions.add_message(session_id, response)
         return response
+        return self._route_provider(prompt)
 
     def chat_voice(self, transcript: str) -> str:
         self.memory.append({"mode": "voice", "prompt": transcript, "runtime": self.runtime.__dict__})

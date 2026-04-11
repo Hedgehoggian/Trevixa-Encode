@@ -13,12 +13,15 @@ try:
 except ImportError:
     from api_entrypoint import TrevixaApi
     from gui_app import launch_gui
+from api_entrypoint import TrevixaApi
+from gui_app import launch_gui
 
 
 def cli_banner() -> str:
     return (
         "Trevixa Encode CLI ready.\n"
         "Commands: /model NAME, /reason VALUE, /eager VALUE, /local NAME1,NAME2,NAME3,NAME4, /local-list, /history, /quit\n"
+        "Commands: /model NAME, /reason VALUE, /eager VALUE, /local NAME1,NAME2,NAME3,NAME4, /local-list, /quit\n"
     )
 
 
