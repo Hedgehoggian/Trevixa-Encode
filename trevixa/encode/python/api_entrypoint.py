@@ -56,6 +56,9 @@ class TrevixaApi:
             f"Context: {context}\nPlan: {plan}"
         )
         return self.features.apply(response)
+        # lightweight local intelligence path
+        nn_scores = self.nn.forward([float((ord(c) % 32) / 31.0) for c in prompt[:16].ljust(16)])
+        return text_chat.respond(f"[{spec.name} v{spec.version} score={sum(nn_scores):.2f}] {prompt}")
 
     def _route_provider(self, prompt: str) -> str:
         if prompt.startswith("@openai") or self.runtime.model.startswith("@openai"):
@@ -69,6 +72,15 @@ class TrevixaApi:
         if prompt.startswith("@local-all"):
             return self.features.apply("\n".join(self.local_runtime.infer_parallel(prompt)))
         return self.features.apply(self.local_runtime.infer(prompt))
+            return openai_provider.respond(prompt, model=model)
+        if prompt.startswith("@claude") or self.runtime.model.startswith("@claude"):
+            model = self.runtime.model.replace("@claude", "").strip() or "claude-3-5-sonnet-latest"
+            return anthropic_provider.respond(prompt, model=model)
+        if prompt.startswith("@copilot") or self.runtime.model.startswith("@copilot"):
+            return github_copilot_provider.respond(prompt)
+        if prompt.startswith("@local-all"):
+            return "\n".join(self.local_runtime.infer_parallel(prompt))
+        return self.local_runtime.infer(prompt)
 
     def chat_text(self, prompt: str) -> str:
         safety = check_prompt(prompt)

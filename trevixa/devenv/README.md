@@ -6,6 +6,12 @@ Integrated layout:
 - Chat (right)
 
 Run:
+Lightweight IDE prototype with:
+- Explorer pane (left)
+- Editor pane (center)
+- Trevixa chat pane (right)
+
+## Run
 ```bash
 PYTHONPATH=. python trevixa/devenv/python/ide_main.py
 ```
@@ -15,3 +21,8 @@ This IDE supports:
 - chat with Trevixa runtime
 - auto-apply suggestions
 - base hooks for collaboration and live-share expansion
+## Current capabilities
+- Open folder, browse files, load/save file content
+- Chat panel backed by Trevixa API
+- Auto-apply suggestion workflow (assistant proposes edits)
+- Foundation for live collaboration features in future releases
