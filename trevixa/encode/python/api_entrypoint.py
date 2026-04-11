@@ -5,6 +5,8 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from connectors import anthropic_provider, github_copilot_provider, openai_provider
+from feature_engine import FeatureEngine
+from intellect import IntellectEngine
 from memory_store import JsonlMemoryStore
 from model_manager import LocalModelRuntime, LocalModelSpec
 from modes import text_chat, video_chat, voice_chat
@@ -30,6 +32,8 @@ class TrevixaApi:
         self.runtime = RuntimeConfig()
         self.local_runtime = LocalModelRuntime(self._run_local_model)
         self.local_runtime.configure([LocalModelSpec("Trevixa Encode Alpha", "0.2.0")])
+        self.intellect = IntellectEngine()
+        self.features = FeatureEngine()
 
     def set_runtime(self, model: str, reasoning: str, eagerness: str) -> None:
         self.runtime = RuntimeConfig(model=model, reasoning=reasoning, eagerness=eagerness)
@@ -44,6 +48,14 @@ class TrevixaApi:
         return [f"{m.name}:{m.version}" for m in self.local_runtime.list_models()]
 
     def _run_local_model(self, prompt: str, spec: LocalModelSpec) -> str:
+        nn_scores = self.nn.forward([float((ord(c) % 32) / 31.0) for c in prompt[:16].ljust(16)])
+        context = self.intellect.retrieve(prompt, self.memory.tail(40), top_k=2)
+        plan = self.intellect.plan(prompt)
+        response = text_chat.respond(
+            f"[{spec.name} v{spec.version} score={sum(nn_scores):.2f}] {prompt}\n"
+            f"Context: {context}\nPlan: {plan}"
+        )
+        return self.features.apply(response)
         # lightweight local intelligence path
         nn_scores = self.nn.forward([float((ord(c) % 32) / 31.0) for c in prompt[:16].ljust(16)])
         return text_chat.respond(f"[{spec.name} v{spec.version} score={sum(nn_scores):.2f}] {prompt}")
@@ -51,6 +63,15 @@ class TrevixaApi:
     def _route_provider(self, prompt: str) -> str:
         if prompt.startswith("@openai") or self.runtime.model.startswith("@openai"):
             model = self.runtime.model.replace("@openai", "").strip() or "gpt-4.1-mini"
+            return self.features.apply(openai_provider.respond(prompt, model=model))
+        if prompt.startswith("@claude") or self.runtime.model.startswith("@claude"):
+            model = self.runtime.model.replace("@claude", "").strip() or "claude-3-5-sonnet-latest"
+            return self.features.apply(anthropic_provider.respond(prompt, model=model))
+        if prompt.startswith("@copilot") or self.runtime.model.startswith("@copilot"):
+            return self.features.apply(github_copilot_provider.respond(prompt))
+        if prompt.startswith("@local-all"):
+            return self.features.apply("\n".join(self.local_runtime.infer_parallel(prompt)))
+        return self.features.apply(self.local_runtime.infer(prompt))
             return openai_provider.respond(prompt, model=model)
         if prompt.startswith("@claude") or self.runtime.model.startswith("@claude"):
             model = self.runtime.model.replace("@claude", "").strip() or "claude-3-5-sonnet-latest"

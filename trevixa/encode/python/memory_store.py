@@ -14,3 +14,7 @@ class JsonlMemoryStore:
     def append(self, record: dict[str, Any]) -> None:
         with self.path.open("a", encoding="utf-8") as f:
             f.write(json.dumps(record, ensure_ascii=False) + "\n")
+
+    def tail(self, limit: int = 50) -> list[str]:
+        lines = self.path.read_text(encoding="utf-8", errors="ignore").splitlines()
+        return lines[-limit:]

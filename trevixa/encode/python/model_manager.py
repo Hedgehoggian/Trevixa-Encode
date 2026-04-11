@@ -20,6 +20,9 @@ class LocalModelRuntime:
 
     def __init__(self, infer_fn: Callable[[str, LocalModelSpec], str]) -> None:
         self._infer_fn = infer_fn
+        self._models: list[LocalModelSpec] = [LocalModelSpec(name="Trevixa Encode Alpha", version="0.2.0")]
+        self._rr = itertools.cycle(range(len(self._models)))
+        self._lock = threading.RLock()
         self._models: list[LocalModelSpec] = []
         self._rr = itertools.cycle([0])
         self._lock = threading.Lock()
@@ -63,6 +66,7 @@ class LocalModelRuntime:
             t.start()
 
         for t in threads:
+            t.join(timeout=30)
             t.join(timeout=20)
 
         outputs = []
