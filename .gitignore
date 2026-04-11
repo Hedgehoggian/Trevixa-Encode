@@ -1,0 +1,7 @@
+# Trevixa artifacts
+trevixa/encode/build/
+trevixa/encode/.venv/
+trevixa/encode/vscext/node_modules/
+trevixa/encode/vscext/out/
+__pycache__/
+*.pyc
