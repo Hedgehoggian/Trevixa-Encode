@@ -7,6 +7,12 @@ import argparse
 import json
 from typing import Callable
 
+try:
+    from .api_entrypoint import TrevixaApi
+    from .gui_app import launch_gui
+except ImportError:
+    from api_entrypoint import TrevixaApi
+    from gui_app import launch_gui
 from api_entrypoint import TrevixaApi
 from gui_app import launch_gui
 
@@ -14,6 +20,7 @@ from gui_app import launch_gui
 def cli_banner() -> str:
     return (
         "Trevixa Encode CLI ready.\n"
+        "Commands: /model NAME, /reason VALUE, /eager VALUE, /local NAME1,NAME2,NAME3,NAME4, /local-list, /history, /quit\n"
         "Commands: /model NAME, /reason VALUE, /eager VALUE, /local NAME1,NAME2,NAME3,NAME4, /local-list, /quit\n"
     )
 
@@ -58,6 +65,9 @@ def parse_runtime_command(api: TrevixaApi, raw: str) -> bool:
         return True
     if raw == "/local-list":
         print("\n".join(api.list_local_models()))
+        return True
+    if raw == "/history":
+        print("\n".join(api.sessions.history("default")))
         return True
     return False
 

@@ -4,6 +4,26 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 
+try:
+    from .connectors import anthropic_provider, github_copilot_provider, openai_provider
+    from .feature_engine import FeatureEngine
+    from .intellect import IntellectEngine
+    from .memory_store import JsonlMemoryStore
+    from .model_manager import LocalModelRuntime, LocalModelSpec
+    from .modes import text_chat, video_chat, voice_chat
+    from .neural_net import LightweightNeuralNet
+    from .safety import check_prompt, safe_refusal
+    from .session_store import SessionStore
+except ImportError:
+    from connectors import anthropic_provider, github_copilot_provider, openai_provider
+    from feature_engine import FeatureEngine
+    from intellect import IntellectEngine
+    from memory_store import JsonlMemoryStore
+    from model_manager import LocalModelRuntime, LocalModelSpec
+    from modes import text_chat, video_chat, voice_chat
+    from neural_net import LightweightNeuralNet
+    from safety import check_prompt, safe_refusal
+    from session_store import SessionStore
 from connectors import anthropic_provider, github_copilot_provider, openai_provider
 from feature_engine import FeatureEngine
 from intellect import IntellectEngine
@@ -34,6 +54,7 @@ class TrevixaApi:
         self.local_runtime.configure([LocalModelSpec("Trevixa Encode Alpha", "0.2.0")])
         self.intellect = IntellectEngine()
         self.features = FeatureEngine()
+        self.sessions = SessionStore()
 
     def set_runtime(self, model: str, reasoning: str, eagerness: str) -> None:
         self.runtime = RuntimeConfig(model=model, reasoning=reasoning, eagerness=eagerness)
@@ -72,6 +93,8 @@ class TrevixaApi:
         if prompt.startswith("@local-all"):
             return self.features.apply("\n".join(self.local_runtime.infer_parallel(prompt)))
         return self.features.apply(self.local_runtime.infer(prompt))
+
+    def chat_text(self, prompt: str, session_id: str = "default") -> str:
             return openai_provider.respond(prompt, model=model)
         if prompt.startswith("@claude") or self.runtime.model.startswith("@claude"):
             model = self.runtime.model.replace("@claude", "").strip() or "claude-3-5-sonnet-latest"
@@ -87,6 +110,7 @@ class TrevixaApi:
         if not safety.allowed:
             return safe_refusal(safety.reason)
 
+        self.sessions.add_message(session_id, prompt)
         self.memory.append(
             {
                 "mode": "text",
@@ -95,6 +119,9 @@ class TrevixaApi:
                 "local_models": self.list_local_models(),
             }
         )
+        response = self._route_provider(prompt)
+        self.sessions.add_message(session_id, response)
+        return response
         return self._route_provider(prompt)
 
     def chat_voice(self, transcript: str) -> str:

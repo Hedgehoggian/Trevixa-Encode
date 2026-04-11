@@ -6,6 +6,10 @@ from __future__ import annotations
 import json
 import sys
 
+try:
+    from .api_entrypoint import TrevixaApi
+except ImportError:
+    from api_entrypoint import TrevixaApi
 from api_entrypoint import TrevixaApi
 
 API = TrevixaApi()

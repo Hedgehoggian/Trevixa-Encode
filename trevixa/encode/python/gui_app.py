@@ -3,6 +3,10 @@ from __future__ import annotations
 import tkinter as tk
 from tkinter import ttk
 
+try:
+    from .api_entrypoint import TrevixaApi
+except ImportError:
+    from api_entrypoint import TrevixaApi
 from api_entrypoint import TrevixaApi
 
 
