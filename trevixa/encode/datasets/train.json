@@ -1,0 +1,7 @@
+{
+  "samples": [
+    {"input": "write python function", "label": "coding"},
+    {"input": "summarize this log", "label": "analysis"},
+    {"input": "explain this api error", "label": "debugging"}
+  ]
+}
